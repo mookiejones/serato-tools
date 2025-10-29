@@ -412,7 +412,7 @@ class SeratoBinFile:
 
     @staticmethod
     def get_full_path(filepath: str):
-        drive, filepath = os.path.splitdrive(filepath)[1]
+        drive, filepath = os.path.splitdrive(filepath)
         if drive:
             return filepath
         else:
