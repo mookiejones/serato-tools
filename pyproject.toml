@@ -25,17 +25,23 @@ authors = [
     { name = "bvandercar-vt", email = "bvandercar@outlook.com" },
 ]
 license = "MIT"
-dependencies = []
+dependencies = [
+    "mutagen",
+    "numpy",
+    "librosa",
+    "pillow",
+    'audioread>=3.1.0; python_version >= "3.14"',
+]
+[project.optional-dependencies]
+track_tags = ["mutagen"]
+waveform_drawing = ["pillow"]
+beatgrid_analysis = ["librosa", "numpy"]
 
 [project.urls]
 Homepage = "https://pypi.org/project/serato-tools/"
 Repository = "https://github.com/bvandercar-vt/serato-tools"
 Issues = "https://github.com/bvandercar-vt/serato-tools/issues"
 
-[project.optional-dependencies]
-track_tags = ["mutagen"]
-waveform_drawing = ["pillow"]
-beatgrid_analysis = ["librosa", "numpy"]
 
 [project.scripts]
 serato_analyze_beatgrid = "serato_tools.track_beatgrid:main_analyze"

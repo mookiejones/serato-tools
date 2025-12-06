@@ -1,4 +1,0 @@
-mutagen
-numpy
-librosa
-pillow
