@@ -11,6 +11,7 @@ from serato_tools.utils import get_enum_key_from_value, parse_cli_keys_and_value
 
 
 class SmartCrate(CrateBase):
+    TESTED_VERSIONS = ["1.0/Serato ScratchLive Smart Crate"]
     EXTENSION = ".scrate"
     DIR = "SmartCrates"
     DIR_PATH = os.path.join(SERATO_DIR, DIR)

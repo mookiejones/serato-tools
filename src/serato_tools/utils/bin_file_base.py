@@ -11,6 +11,7 @@ from serato_tools.utils import get_enum_key_from_value, logger, SERATO_DRIVE, Da
 
 
 class SeratoBinFile:
+
     class Fields(StrEnum):
         # Database & Crate
         VERSION = "vrsn"
@@ -72,17 +73,20 @@ class SeratoBinFile:
 
     type ValueOrNone = Value | None
 
-    DEFAULT_ENTRIES: EntryList
+    TESTED_VERSIONS: list[str]
     TRACK_PATH_KEY: Fields
+    DEFAULT_ENTRIES: EntryList
 
     def __init__(self, file: str):
         self.filepath = os.path.abspath(file)
 
         self.raw_data: bytes
         self.entries: SeratoBinFile.EntryList
+        self.version: str
 
-        if not self.TRACK_PATH_KEY:
-            raise ValueError("need to set TRACK_PATH_KEY in subclass")
+        for key in ["TESTED_VERSIONS", "TRACK_PATH_KEY", "DEFAULT_ENTRIES"]:
+            if not hasattr(self, key):
+                raise AttributeError(f"need to set {key} in subclass")
 
         if os.path.exists(file):
             if file.lower().endswith(".json"):
@@ -91,13 +95,21 @@ class SeratoBinFile:
             else:
                 with open(file, "rb") as f:
                     self.raw_data = f.read()
-                    self.entries = list(SeratoBinFile._parse_item(self.raw_data))
+                    self.entries = list(self._parse_item(self.raw_data))
         else:
             logger.warning(f"File does not exist: {file}. Using default data to create an empty item.")
-            if not self.DEFAULT_ENTRIES:
-                raise ValueError("no self.DEFAULT_ENTRIES passed in subclass")
             self.entries = self.DEFAULT_ENTRIES
+            version_entry = self.DEFAULT_ENTRIES[0]
+            default_version = version_entry[1]
+            if not isinstance(default_version, str):
+                raise DataTypeError(default_version, str, version_entry[0])
+            if default_version not in self.TESTED_VERSIONS:
+                raise ValueError("version in DEFAULT_ENTRIES is not in TESTED_VERSIONS")
+            self.version = default_version
             self._dump()
+
+        if not hasattr(self, "version"):
+            raise AttributeError("version not set after parsing file")
 
     def __str__(self) -> str:
         return self._stringify_entries(self.get_entries())
@@ -114,6 +126,24 @@ class SeratoBinFile:
                 lines.append(f"{indent_str}{field} ({fieldname}): {str(value)}")
 
         return "\n".join(lines)
+
+    def _check_version(self, value: Value, set_version: bool = False):
+        if not isinstance(value, str):
+            raise DataTypeError(value, str, SeratoBinFile.Fields.VERSION)
+        if value not in self.TESTED_VERSIONS:
+            raise ValueError(
+                f"""
+                ERROR: Untested version Serato bin file version: {value}
+                Please contact the developer so we can get it tested and supported!
+                We will have you send the file you are trying to parse so we can add support and tests for it.
+                We do not want to risk damaging users' library database or crate files!
+
+                Possible versions:
+                {'\n'.join(self.TESTED_VERSIONS)}
+                """
+            )
+        if set_version:
+            self.version = value
 
     class EntryJson(TypedDict):
         field: "SeratoBinFile.ParsedField"
@@ -147,7 +177,7 @@ class SeratoBinFile:
     def from_json_object(self, json_data: list[EntryJson]):
         def json_to_entries(json_list: list[SeratoBinFile.EntryJson]) -> SeratoBinFile.EntryList:
             result: SeratoBinFile.EntryList = []
-
+            version_set = False
             for entry_obj in json_list:
                 field = entry_obj["field"]
                 value = entry_obj["value"]
@@ -165,6 +195,10 @@ class SeratoBinFile:
                     value = str(cast(str, value))
                 else:
                     raise ValueError(f"unexpected type: {value_type}")
+
+                if not version_set and field == SeratoBinFile.Fields.VERSION:
+                    self._check_version(value, set_version=True)
+                    version_set = True
 
                 result.append((field, value))
 
@@ -255,9 +289,9 @@ class SeratoBinFile:
         # vrsn field has no type_id, but contains text ("t")
         return "t" if field == SeratoBinFile.Fields.VERSION else field[0]
 
-    @staticmethod
-    def _parse_item(item_data: bytes) -> Generator["SeratoBinFile.Entry", None, None]:
+    def _parse_item(self, item_data: bytes) -> Generator["SeratoBinFile.Entry", None, None]:
         fp = io.BytesIO(item_data)
+        version_set = False
         for header in iter(lambda: fp.read(8), b""):
             assert len(header) == 8
             field_ascii: bytes
@@ -271,7 +305,7 @@ class SeratoBinFile:
 
             value: SeratoBinFile.Value
             if type_id in ("o", "r"):  #  struct
-                value = list(SeratoBinFile._parse_item(data))
+                value = list(self._parse_item(data))
             elif type_id in ("p", "t"):  # text
                 # value = (data[1:] + b"\00").decode("utf-16") # from imported code
                 value = data.decode("utf-16-be")
@@ -284,20 +318,28 @@ class SeratoBinFile:
             else:
                 raise ValueError(f"unexpected type for field: {field}")
 
+            if not version_set and field == SeratoBinFile.Fields.VERSION:
+                self._check_version(value, set_version=True)
+                version_set = True
+
             yield field, value
 
-    @staticmethod
-    def _dump_item(entry: Entry) -> bytes:
+    def _dump_item(self, entry: Entry) -> bytes:
         field, value = entry
         field_bytes = field.encode("ascii")
         assert len(field_bytes) == 4
+
+        if field == SeratoBinFile.Fields.VERSION:
+            self._check_version(value)
+            if value != self.version:
+                raise ValueError(f"version field value {value} does not match parsed value {self.version}")
 
         type_id: str = SeratoBinFile._get_type(field)
 
         if type_id in ("o", "r"):  #  struct (list)
             if not isinstance(value, list):
                 raise DataTypeError(value, list, field)
-            data = SeratoBinFile._dump_entries(value)
+            data = self._dump_entries(value)
         elif type_id in ("p", "t"):  # text
             if not isinstance(value, str):
                 raise DataTypeError(value, str, field)
@@ -321,12 +363,12 @@ class SeratoBinFile:
         header = struct.pack(">4sI", field_bytes, length)
         return header + data
 
-    @staticmethod
-    def _dump_entries(entries: EntryList):
-        return b"".join(SeratoBinFile._dump_item(entry) for entry in entries)
+    def _dump_entries(self, entries: EntryList):
+        return b"".join(self._dump_item(entry) for entry in entries)
 
     def _dump(self):
-        self.raw_data = SeratoBinFile._dump_entries(self.entries)
+
+        self.raw_data = self._dump_entries(self.entries)
 
     def get_track_paths(self, include_drive: bool = False) -> list[str]:
         track_paths: list[str] = []
