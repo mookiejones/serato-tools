@@ -29,8 +29,8 @@ dependencies = [
     "mutagen",
     "numpy",
     "librosa",
-    "pillow",
-    'audioread>=3.1.0; python_version >= "3.14"',
+    'pillow>=0; python_version<"3.14"',
+    'pillow>=12; python_version>="3.14"',
 ]
 [project.optional-dependencies]
 track_tags = ["mutagen"]
@@ -57,3 +57,5 @@ exclude = ["test*"]
 [tool.black]
 line-length = 120
 
+[tool.pyright]
+disableBytesTypePromotions = true

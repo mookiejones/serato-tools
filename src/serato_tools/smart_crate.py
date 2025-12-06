@@ -137,7 +137,9 @@ class SmartCrate(CrateBase):
                 ),
             )
 
-        def set_value(self, value: str | int):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def set_value(  # pylint: disable=arguments-differ # pyright: ignore[reportIncompatibleMethodOverride]
+            self, value: str | int
+        ):
             field = SmartCrate._get_rule_value_type(value)  # pylint: disable=protected-access
             super().set_value(field, value)
 

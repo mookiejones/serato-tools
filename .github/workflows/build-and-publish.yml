@@ -19,12 +19,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.13' # can't do 3.14 yet due to build issues
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install .
+          python -m pip install ".[track_tags,waveform_drawing,beatgrid_analysis]"
           pip install build
 
       - name: Build Distribution
