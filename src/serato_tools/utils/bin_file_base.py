@@ -367,19 +367,18 @@ class SeratoBinFile:
         return b"".join(self._dump_item(entry) for entry in entries)
 
     def _dump(self):
-
         self.raw_data = self._dump_entries(self.entries)
 
-    def get_track_paths(self, include_drive: bool = False) -> list[str]:
-        track_paths: list[str] = []
+    def get_tracks(self) -> Generator[Track]:
         for field, value in self.entries:
             if field == SeratoBinFile.Fields.TRACK:
                 if not isinstance(value, list):
                     raise DataTypeError(value, list, field)
                 track = self._get_track(value)
-                track_path = track.get_full_path() if include_drive else track.relpath
-                track_paths.append(track_path)
-        return track_paths
+                yield track
+
+    def get_track_paths(self, include_drive: bool = False) -> list[str]:
+        return [t.get_full_path() if include_drive else t.relpath for t in self.get_tracks()]
 
     def modify_tracks(self, func: Callable[[Track], Track]):
         for i, (field, value) in enumerate(self.entries):
