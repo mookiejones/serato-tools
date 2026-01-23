@@ -131,8 +131,7 @@ class SeratoBinFile:
         if not isinstance(value, str):
             raise DataTypeError(value, str, SeratoBinFile.Fields.VERSION)
         if value not in self.TESTED_VERSIONS:
-            raise ValueError(
-                f"""
+            raise ValueError(f"""
                 ERROR: Untested version Serato bin file version: {value}
                 Please contact the developer so we can get it tested and supported!
                 We will have you send the file you are trying to parse so we can add support and tests for it.
@@ -140,8 +139,7 @@ class SeratoBinFile:
 
                 Possible versions:
                 {'\n'.join(self.TESTED_VERSIONS)}
-                """
-            )
+                """)
         if set_version:
             self.version = value
 
@@ -369,7 +367,7 @@ class SeratoBinFile:
     def _dump(self):
         self.raw_data = self._dump_entries(self.entries)
 
-    def get_tracks(self) -> Generator[Track]:
+    def get_tracks(self) -> Generator[Track, None, None]:
         for field, value in self.entries:
             if field == SeratoBinFile.Fields.TRACK:
                 if not isinstance(value, list):

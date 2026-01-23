@@ -67,16 +67,14 @@ class SeratoTrack:
     def _check_version(given: bytes, expected: Version):
         given_version: SeratoTrack.Version = struct.unpack(SeratoTrack.VERSION_FORMAT, given)
         if given_version != expected:
-            raise ValueError(
-                f"""
+            raise ValueError(f"""
                 ERROR: Untested Serato tag version: {str(given_version)}
                 Please contact the developer so we can get it tested and supported!
                 We will have you send the file you are trying to parse so we can add support and tests for it.
                 We do not want to risk damaging users' library database or crate files!
 
                 Expected version: {str(expected)}
-                """
-            )
+                """)
 
     @staticmethod
     def _pack_version(version: Version):

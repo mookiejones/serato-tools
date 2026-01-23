@@ -7,7 +7,6 @@ import re
 import platform
 from typing import Optional, cast
 
-
 if __package__ is None:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
