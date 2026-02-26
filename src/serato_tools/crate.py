@@ -48,10 +48,10 @@ def main():
 
     if not args.file_or_dir:
         print(f"must pass a file or dir, or --all!\nfiles in {Crate.DIR_PATH}:")
-        print("\n".join(Crate.get_serato_crate_files()))
+        print("\n".join(Crate.get_crate_files()))
         sys.exit()
 
-    for crate_path in Crate.get_serato_crate_files(args.file_or_dir):
+    for crate_path in Crate.get_crate_files(args.file_or_dir):
         crate = Crate(crate_path)
         if args.find_missing:
             crate.find_missing()
