@@ -82,6 +82,7 @@ serato_crate "path/to/Crate.crate"
 - `track_cues_v1.py` - Legacy cues format (Serato Markers_ tag)
 - `track_beatgrid.py` - Beatgrid markers, includes dynamic analysis (Serato BeatGrid tag)
 - `track_autotags.py` - BPM and gain values (Serato Autotags tag)
+- `track_gain.py` - Replay gain values stored in audio file tags (separate from Serato autotags)
 - `track_waveform.py` - Waveform data (Serato Overview tag)
 - `track_tagdump.py` - Debug tool to dump all tag data
 
@@ -120,8 +121,9 @@ entries = [
 Tests are in the `test/` directory using Python's unittest framework:
 - Test data files are in `test/data/` and `data/` directories
 - Each module has a corresponding test file (e.g., `test_crate.py` for `crate.py`)
+- Tests use the import pattern: `from src.serato_tools.module import Class`
 - Tests validate parsing, modification, and serialization of binary files
-- CI runs tests on Python 3.12 and 3.13 on Windows
+- CI runs tests on Python 3.12 and 3.13 on Windows (runs-on: windows-latest)
 
 ### Key Patterns
 
@@ -151,11 +153,13 @@ db.Fields.FILE_PATH  # Use this
 
 ### Dependencies
 
-**Core dependencies** (always installed):
+**Core dependencies** (always installed with `pip install serato-tools`):
 - mutagen - Read/write audio file metadata and GEOB tags
 - numpy - Beatgrid analysis
 - librosa - Audio analysis
 - pillow - Waveform image generation (Python < 3.14 uses any version, >= 3.14 requires v12+)
+
+The package defines optional dependency groups in pyproject.toml (`track_tags`, `waveform_drawing`, `beatgrid_analysis`) for convenience during development, but these reference the same core dependencies listed above.
 
 ### Important Notes
 
