@@ -42,7 +42,7 @@ class DatabaseV2(SeratoBinFile):
 
         from serato_tools.crate import Crate
 
-        for crate_path in Crate.get_serato_crate_files():
+        for crate_path in Crate.get_crate_files():
             crate = Crate(crate_path)
             crate.change_track_path(src, dest)
             crate.save()

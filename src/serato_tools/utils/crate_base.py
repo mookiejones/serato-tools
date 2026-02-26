@@ -74,7 +74,7 @@ class CrateBase(SeratoBinFile):
             self.add_track(track)
 
     @classmethod
-    def get_serato_crate_files(cls, file_or_dir: str | None = None) -> list[str]:
+    def get_crate_files(cls, file_or_dir: str | None = None) -> list[str]:
         if file_or_dir is None:
             file_or_dir = cls.DIR_PATH
 
@@ -83,7 +83,7 @@ class CrateBase(SeratoBinFile):
 
             for fname in os.listdir(file_or_dir):
                 path = os.path.normpath(os.path.join(file_or_dir, fname))
-                if os.path.isfile(path) and path.endswith(".crate"):
+                if os.path.isfile(path) and path.endswith(cls.EXTENSION):
                     crate_paths.append(path)
         elif os.path.isfile(file_or_dir):
             crate_paths = [file_or_dir]
